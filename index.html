@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mein Habit-Kompass & To-Dos</title>
     <style>
-        /* Das Design (CSS) */
+        /* =========================================
+           DAS DESIGN (CSS)
+           ========================================= */
         body { 
             font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
             background-color: #f0f0f5; 
@@ -14,7 +16,33 @@
             max-width: 600px;
             margin: 0 auto;
         }
-        h2 { text-align: center; margin-top: 30px; }
+        
+        /* NEU: Navigation für die Buttons ganz oben */
+        .nav-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+        .btn-nav {
+            flex: 1; /* Beide Buttons nehmen gleich viel Platz ein */
+            background: #e0e0e5;
+            color: #333;
+            padding: 15px;
+            border-radius: 12px;
+            border: none;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        /* So sieht der Button aus, wenn er aktiv ist */
+        .btn-nav.active {
+            background: #007aff;
+            color: white;
+        }
+
+        h2 { text-align: center; margin-top: 10px; }
         .card { 
             background: white; 
             padding: 20px; 
@@ -47,7 +75,7 @@
         .btn-delete { background: transparent; color: #999; font-size: 14px; margin-top: 15px; width: auto; float: right; }
         .clear { clear: both; }
 
-        /* Styles für die To-Do Liste */
+        /* To-Do Styles */
         .todo-item { 
             display: flex; 
             align-items: center; 
@@ -83,33 +111,63 @@
 </head>
 <body>
 
-    <h2>🧭 Mein Habit-Kompass</h2>
-
-    <div class="card">
-        <input type="text" id="habitName" placeholder="Name der Gewohnheit (z.B. Lesen)...">
-        <select id="habitType">
-            <option value="good">🟢 Gute Gewohnheit (Zähler)</option>
-            <option value="bad">🔴 Schlechte Gewohnheit (Timer)</option>
-            <option value="reading">📖 Lesen (Seiten-Tracker)</option>
-        </select>
-        <button class="btn-add" onclick="addHabit()">Gewohnheit hinzufügen</button>
+    <div class="nav-container">
+        <button id="btnHabits" class="btn-nav active" onclick="switchTab('habits')">🧭 Gewohnheiten</button>
+        <button id="btnTodos" class="btn-nav" onclick="switchTab('todos')">📝 To-Dos</button>
     </div>
 
-    <div id="habitsContainer"></div>
-
-    <hr style="border: 1px solid #ddd; margin: 40px 0;">
-
-    <h2>📝 Meine To-Do Liste</h2>
-
-    <div class="card">
-        <input type="text" id="todoName" placeholder="Neue Aufgabe eintragen...">
-        <button class="btn-add" onclick="addTodo()">Aufgabe hinzufügen</button>
-    </div>
-
-    <div class="card" id="todosContainer" style="padding-top: 5px; padding-bottom: 5px;">
+    <div id="sectionHabits" style="display: block;">
+        <h2>🧭 Mein Habit-Kompass</h2>
+        <div class="card">
+            <input type="text" id="habitName" placeholder="Name der Gewohnheit (z.B. Lesen)...">
+            <select id="habitType">
+                <option value="good">🟢 Gute Gewohnheit (Zähler)</option>
+                <option value="bad">🔴 Schlechte Gewohnheit (Timer)</option>
+                <option value="reading">📖 Lesen (Seiten-Tracker)</option>
+            </select>
+            <button class="btn-add" onclick="addHabit()">Gewohnheit hinzufügen</button>
         </div>
+        <div id="habitsContainer"></div>
+    </div>
+
+    <div id="sectionTodos" style="display: none;">
+        <h2>📝 Meine To-Do Liste</h2>
+        <div class="card">
+            <input type="text" id="todoName" placeholder="Neue Aufgabe eintragen...">
+            <button class="btn-add" onclick="addTodo()">Aufgabe hinzufügen</button>
+        </div>
+        <div class="card" id="todosContainer" style="padding-top: 5px; padding-bottom: 5px;">
+        </div>
+    </div>
 
     <script>
+        /* =========================================
+           NEU: DIE NAVIGATION (TABS UMSCHALTEN)
+           ========================================= */
+        function switchTab(tabName) {
+            // Zuerst holen wir uns alle Bausteine
+            const secHabits = document.getElementById('sectionHabits');
+            const secTodos = document.getElementById('sectionTodos');
+            const btnHabits = document.getElementById('btnHabits');
+            const btnTodos = document.getElementById('btnTodos');
+
+            if (tabName === 'habits') {
+                // Gewohnheiten anzeigen, To-Dos verstecken
+                secHabits.style.display = 'block';
+                secTodos.style.display = 'none';
+                // Button-Farbe anpassen
+                btnHabits.classList.add('active');
+                btnTodos.classList.remove('active');
+            } else if (tabName === 'todos') {
+                // To-Dos anzeigen, Gewohnheiten verstecken
+                secHabits.style.display = 'none';
+                secTodos.style.display = 'block';
+                // Button-Farbe anpassen
+                btnTodos.classList.add('active');
+                btnHabits.classList.remove('active');
+            }
+        }
+
         /* =========================================
            TEIL 1: GEWOHNHEITEN & SEITEN-TRACKER
            ========================================= */
@@ -131,7 +189,7 @@
                 name: name,
                 type: type,
                 count: 0,
-                totalPages: 0, // Speicher für die gelesenen Seiten
+                totalPages: 0, 
                 startTime: Date.now()
             });
             
@@ -139,7 +197,6 @@
             saveHabits();
         }
 
-        // Neue Funktion zum Seiten hinzufügen
         function addPages(id) {
             const inputField = document.getElementById(`input-${id}`);
             const pagesToAdd = parseInt(inputField.value);
@@ -207,7 +264,7 @@
                     div.innerHTML = `
                         <h3>🔴 ${h.name}</h3>
                         <p>Zeit seit dem letzten Mal: <strong>${displayTime}</strong></p>
-                        <button class="btn-reset" onclick="resetTimer(${h.id})">Rückfällig geworden (Reset)</button>
+                        <button class="btn-reset" onclick="resetTimer(${h.id})">Rückfällig (Reset)</button>
                         <button class="btn-delete" onclick="deleteHabit(${h.id})">Löschen</button>
                         <div class="clear"></div>
                     `;
@@ -284,3 +341,4 @@
     </script>
 </body>
 </html>
+
