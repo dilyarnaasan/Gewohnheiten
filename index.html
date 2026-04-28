@@ -11,7 +11,7 @@
             background-color: #f0f0f5; 
             padding: 20px; 
             color: #333;
-            max-width: 600px; /* Macht das Layout auf großen Bildschirmen angenehmer */
+            max-width: 600px;
             margin: 0 auto;
         }
         h2 { text-align: center; margin-top: 30px; }
@@ -22,7 +22,7 @@
             margin-bottom: 15px; 
             box-shadow: 0 4px 6px rgba(0,0,0,0.05); 
         }
-        input[type="text"], select { 
+        input[type="text"], input[type="number"], select { 
             width: 100%; 
             padding: 12px; 
             margin-bottom: 10px; 
@@ -47,7 +47,7 @@
         .btn-delete { background: transparent; color: #999; font-size: 14px; margin-top: 15px; width: auto; float: right; }
         .clear { clear: both; }
 
-        /* Neue Styles für die To-Do Liste */
+        /* Styles für die To-Do Liste */
         .todo-item { 
             display: flex; 
             align-items: center; 
@@ -66,7 +66,6 @@
             font-size: 16px; 
             transition: all 0.2s;
         }
-        /* So sieht der Text aus, wenn der Haken gesetzt ist */
         .todo-completed { 
             text-decoration: line-through; 
             color: #aaa; 
@@ -91,6 +90,7 @@
         <select id="habitType">
             <option value="good">🟢 Gute Gewohnheit (Zähler)</option>
             <option value="bad">🔴 Schlechte Gewohnheit (Timer)</option>
+            <option value="reading">📖 Lesen (Seiten-Tracker)</option>
         </select>
         <button class="btn-add" onclick="addHabit()">Gewohnheit hinzufügen</button>
     </div>
@@ -102,7 +102,7 @@
     <h2>📝 Meine To-Do Liste</h2>
 
     <div class="card">
-        <input type="text" id="todoName" placeholder="Neue Aufgabe eintragen (z.B. Einkaufen gehen)...">
+        <input type="text" id="todoName" placeholder="Neue Aufgabe eintragen...">
         <button class="btn-add" onclick="addTodo()">Aufgabe hinzufügen</button>
     </div>
 
@@ -111,7 +111,7 @@
 
     <script>
         /* =========================================
-           TEIL 1: GEWOHNHEITEN (Dein bisheriger Code)
+           TEIL 1: GEWOHNHEITEN & SEITEN-TRACKER
            ========================================= */
         let habits = JSON.parse(localStorage.getItem('myHabits')) || [];
 
@@ -131,10 +131,25 @@
                 name: name,
                 type: type,
                 count: 0,
+                totalPages: 0, // Speicher für die gelesenen Seiten
                 startTime: Date.now()
             });
             
             document.getElementById('habitName').value = '';
+            saveHabits();
+        }
+
+        // Neue Funktion zum Seiten hinzufügen
+        function addPages(id) {
+            const inputField = document.getElementById(`input-${id}`);
+            const pagesToAdd = parseInt(inputField.value);
+            
+            if (isNaN(pagesToAdd) || pagesToAdd <= 0) return;
+
+            let habit = habits.find(h => h.id === id);
+            habit.totalPages += pagesToAdd;
+            
+            inputField.value = ''; 
             saveHabits();
         }
 
@@ -172,6 +187,17 @@
                         <button class="btn-delete" onclick="deleteHabit(${h.id})">Löschen</button>
                         <div class="clear"></div>
                     `;
+                } else if(h.type === 'reading') {
+                    div.innerHTML = `
+                        <h3>📖 ${h.name}</h3>
+                        <p>Insgesamt gelesen: <strong>${h.totalPages}</strong> Seiten</p>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="number" id="input-${h.id}" placeholder="Seiten..." style="flex-grow: 1; margin: 0;">
+                            <button class="btn-plus" onclick="addPages(${h.id})" style="width: auto; margin: 0; padding: 10px 20px;">+</button>
+                        </div>
+                        <button class="btn-delete" onclick="deleteHabit(${h.id})">Löschen</button>
+                        <div class="clear"></div>
+                    `;
                 } else {
                     let diffMinutes = Math.floor((now - h.startTime) / (1000 * 60));
                     let hours = Math.floor(diffMinutes / 60);
@@ -191,53 +217,44 @@
         }
 
         /* =========================================
-           TEIL 2: TO-DO LISTE (Die neuen Funktionen)
+           TEIL 2: TO-DO LISTE
            ========================================= */
-        
-        // 1. Zweites Gedächtnis abrufen (für die To-Dos)
         let todos = JSON.parse(localStorage.getItem('myTodos')) || [];
 
-        // 2. To-Dos speichern
         function saveTodos() {
             localStorage.setItem('myTodos', JSON.stringify(todos));
             renderTodos();
         }
 
-        // 3. Neues To-Do hinzufügen
         function addTodo() {
             const text = document.getElementById('todoName').value;
-            
-            if(text.trim() === '') return; // Nichts tun, wenn Feld leer ist
+            if(text.trim() === '') return; 
 
             todos.push({
                 id: Date.now(),
                 text: text,
-                completed: false // Am Anfang ist die Aufgabe noch nicht erledigt
+                completed: false 
             });
             
-            document.getElementById('todoName').value = ''; // Feld leeren
+            document.getElementById('todoName').value = ''; 
             saveTodos();
         }
 
-        // 4. Haken setzen / entfernen
         function toggleTodo(id) {
             let todo = todos.find(t => t.id === id);
-            todo.completed = !todo.completed; // Macht aus true false und umgekehrt
+            todo.completed = !todo.completed; 
             saveTodos();
         }
 
-        // 5. To-Do löschen
         function deleteTodo(id) {
             todos = todos.filter(t => t.id !== id);
             saveTodos();
         }
 
-        // 6. To-Dos auf den Bildschirm malen
         function renderTodos() {
             const container = document.getElementById('todosContainer');
             container.innerHTML = '';
 
-            // Wenn keine To-Dos da sind, Container verstecken oder leeren Text anzeigen
             if (todos.length === 0) {
                 container.innerHTML = '<p style="text-align: center; color: #888;">Noch keine Aufgaben vorhanden.</p>';
                 return;
@@ -247,7 +264,6 @@
                 let div = document.createElement('div');
                 div.className = 'todo-item';
                 
-                // Wir prüfen, ob 'completed' true ist. Wenn ja, fügen wir checked und unsere CSS-Klasse hinzu.
                 div.innerHTML = `
                     <input type="checkbox" class="todo-checkbox" ${t.completed ? 'checked' : ''} onchange="toggleTodo(${t.id})">
                     <span class="todo-text ${t.completed ? 'todo-completed' : ''}">${t.text}</span>
@@ -261,7 +277,7 @@
         // START DER APP
         // =========================================
         renderHabits();
-        renderTodos(); // To-Dos beim Start laden
+        renderTodos(); 
         
         setInterval(renderHabits, 60000);
 
