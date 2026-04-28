@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mein Habit-Kompass</title>
+    <style>
+        /* Das Design (CSS) */
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
+            background-color: #f0f0f5; 
+            padding: 20px; 
+            color: #333;
+        }
+        h2 { text-align: center; }
+        .card { 
+            background: white; 
+            padding: 20px; 
+            border-radius: 15px; 
+            margin-bottom: 15px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05); 
+        }
+        input, select { 
+            width: 100%; 
+            padding: 12px; 
+            margin-bottom: 10px; 
+            border: 1px solid #ccc; 
+            border-radius: 8px; 
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        button { 
+            padding: 12px; 
+            border-radius: 8px; 
+            border: none; 
+            font-size: 16px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            width: 100%;
+            margin-top: 5px;
+        }
+        .btn-add { background: #007aff; color: white; }
+        .btn-plus { background: #34c759; color: white; }
+        .btn-reset { background: #ff3b30; color: white; }
+        .btn-delete { background: transparent; color: #999; font-size: 14px; margin-top: 15px; width: auto; float: right; }
+        .clear { clear: both; }
+    </style>
+</head>
+<body>
+
+    <h2>🧭 Mein Habit-Kompass</h2>
+
+    <div class="card">
+        <input type="text" id="habitName" placeholder="Name der Gewohnheit (z.B. Lesen)...">
+        <select id="habitType">
+            <option value="good">🟢 Gute Gewohnheit (Zähler)</option>
+            <option value="bad">🔴 Schlechte Gewohnheit (Timer)</option>
+        </select>
+        <button class="btn-add" onclick="addHabit()">Hinzufügen</button>
+    </div>
+
+    <div id="habitsContainer"></div>
+
+    <script>
+        // 1. Gedächtnis abrufen
+        let habits = JSON.parse(localStorage.getItem('myHabits')) || [];
+
+        // 2. Gedächtnis speichern
+        function saveHabits() {
+            localStorage.setItem('myHabits', JSON.stringify(habits));
+            renderHabits();
+        }
+
+        // 3. Neue Gewohnheit hinzufügen
+        function addHabit() {
+            const name = document.getElementById('habitName').value;
+            const type = document.getElementById('habitType').value;
+            
+            if(name.trim() === '') return; // Nichts tun, wenn Feld leer ist
+
+            habits.push({
+                id: Date.now(),
+                name: name,
+                type: type,
+                count: 0,
+                startTime: Date.now()
+            });
+            
+            document.getElementById('habitName').value = ''; // Feld wieder leeren
+            saveHabits();
+        }
+
+        // 4. Zähler für gute Gewohnheiten erhöhen
+        function increaseCount(id) {
+            let habit = habits.find(h => h.id === id);
+            habit.count++;
+            saveHabits();
+        }
+
+        // 5. Timer für schlechte Gewohnheiten neustarten
+        function resetTimer(id) {
+            let habit = habits.find(h => h.id === id);
+            habit.startTime = Date.now();
+            saveHabits();
+        }
+
+        // 6. Gewohnheit löschen
+        function deleteHabit(id) {
+            habits = habits.filter(h => h.id !== id);
+            saveHabits();
+        }
+
+        // 7. Alles auf den Bildschirm malen
+        function renderHabits() {
+            const container = document.getElementById('habitsContainer');
+            container.innerHTML = '';
+            let now = Date.now();
+
+            habits.forEach(h => {
+                let div = document.createElement('div');
+                div.className = 'card';
+                
+                if(h.type === 'good') {
+                    div.innerHTML = `
+                        <h3>🟢 ${h.name}</h3>
+                        <p>Aktueller Stand: <strong>${h.count}</strong> mal geschafft!</p>
+                        <button class="btn-plus" onclick="increaseCount(${h.id})">+ 1 Hinzufügen</button>
+                        <button class="btn-delete" onclick="deleteHabit(${h.id})">Löschen</button>
+                        <div class="clear"></div>
+                    `;
+                } else {
+                    // Zeit ausrechnen
+                    let diffMinutes = Math.floor((now - h.startTime) / (1000 * 60));
+                    let hours = Math.floor(diffMinutes / 60);
+                    let days = Math.floor(hours / 24);
+                    let displayTime = `${days} Tage, ${hours % 24} Stunden`;
+
+                    div.innerHTML = `
+                        <h3>🔴 ${h.name}</h3>
+                        <p>Zeit seit dem letzten Mal: <strong>${displayTime}</strong></p>
+                        <button class="btn-reset" onclick="resetTimer(${h.id})">Rückfällig geworden (Reset)</button>
+                        <button class="btn-delete" onclick="deleteHabit(${h.id})">Löschen</button>
+                        <div class="clear"></div>
+                    `;
+                }
+                container.appendChild(div);
+            });
+        }
+
+        // App beim Start einmal aufbauen
+        renderHabits();
+        
+        // Timer jede Minute aktualisieren
+        setInterval(renderHabits, 60000);
+    </script>
+</body>
+</html>
+
